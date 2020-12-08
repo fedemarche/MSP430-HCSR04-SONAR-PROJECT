@@ -3,7 +3,6 @@
 #define TRIGGER_PIN BIT6   // P1.6
 #define ECHO_PIN BIT3  // P1.3
 
-//definizione PIN per display settesegmenti
 #define LED_B BIT1
 #define LED_C BIT2
 #define LED_D BIT3
@@ -16,7 +15,7 @@
 #define LED3 BIT5
 #define LED4 BIT6
 
-// definizione numeri display
+//display numbers
 #define Number_0 (LED_B + LED_C + LED_D + LED_E +LED_F)
 #define Number_1 (LED_B + LED_C)
 #define Number_2 (LED_B + LED_D + LED_G + LED_E)
@@ -28,12 +27,12 @@
 #define Number_8 (LED_B + LED_C + LED_D + LED_F + LED_G + LED_E)
 #define Number_9 (LED_B + LED_C + LED_D + LED_F + LED_G)
 
-//valore di default inizale conversione ADC
+//initial ADC value
 unsigned int ADCValue = 30;
 
 int flag_mode = 1;
 
-// funzoine display 7 segmenti
+// display func
 void displaySetteSegmentiShow(int input){
 
         switch(input)
@@ -80,7 +79,7 @@ void displaySetteSegmentiShow(int input){
                 P6OUT = Number_9;
                 break;
         case 11:
-                // caso speciale utilizzato nel settaggio della soglia
+                // special case - settings threshold
                 P7OUT = 0;
                 P6OUT = LED_G;
                 break;
@@ -103,26 +102,26 @@ void main(void)
     WDTCTL = WDTPW + WDTHOLD;
     P1DIR = TRIGGER_PIN+BIT0;
 
-    P1REN |= BIT1;                            // abilitazione resistenza interna di P1.1
-    P1OUT |= BIT1;                            // resistenza di pull-up P1.1
-    P1IES &= ~BIT1;                           // setto interrut sull edge Lo/Hi di P1.1
+    P1REN |= BIT1;                            // P1.1
+    P1OUT |= BIT1;                            // pull-up P1.1
+    P1IES &= ~BIT1;                           // interrupt edge Lo/Hi di P1.1
     P1IFG &= ~BIT1;                           // P1.1 IFG cleared
-    P1IE |= BIT1;                             // ablitazione interrupt P1.1
+    P1IE |= BIT1;                             // interrupt P1.1
 
 
 
-    P3DIR = LED1+LED2+LED3+LED4;              // setto in out pin controllo cifre di
-    P1IN = ECHO_PIN;                          // setto out pin echo per sensore hc-sr04
+    P3DIR = LED1+LED2+LED3+LED4;              
+    P1IN = ECHO_PIN;                          // pin echo sensor hc-sr04
     P7DIR = BIT0;                             // out led A display
     P6DIR = LED_B + LED_C + LED_D + LED_F + LED_G + LED_E;       // out pin display 7 segmenti
-    P8DIR = BIT1;                             // out led soglia
+    P8DIR = BIT1;                             // out led th
 
     TA1CTL = TASSEL_2 + ID_0 + MC_2;          // SMCLK, no div ,continuous
 
-    __bis_SR_register( GIE );                 // Abilita interrupt globali
+    __bis_SR_register( GIE );                 // global interrupt
 
     ADC12CTL0 = ADC12SHT02 + ADC12ON;         // sampling time, ADC12 on vref defualt 3,3 (vcc)
-    ADC12CTL1 = ADC12SHP;                     // uso sampling timer
+    ADC12CTL1 = ADC12SHP;                     // use sampling timer
     ADC12CTL0 |= ADC12ENC;
     P6SEL |= 0x01;                            // setto P6.0 come ADC
 
@@ -131,26 +130,26 @@ void main(void)
 
         if(flag_mode == 1){
             P1OUT &= ~BIT0;
-            TA1R = 0;                          // Reset del timer prima del'inizio dell' impulso di trig
+            TA1R = 0;                          // Reset timer
 
                                                // Send a 20us trigger pulse
-            P1OUT |= TRIGGER_PIN;              // impulso trigger
+            P1OUT |= TRIGGER_PIN;              // impulse trigger
             __delay_cycles(15);                // 20us delay
-            P1OUT &= ~TRIGGER_PIN;             // fine trigger
+            P1OUT &= ~TRIGGER_PIN;             // end trigger
 
             // misurazione echo
-            while ((P1IN & ECHO_PIN) == 0);    // inizio misurazione echo
+            while ((P1IN & ECHO_PIN) == 0);    // init echo
             TA1R = 0;                          // reset timer
 
-            while ((P1IN & ECHO_PIN) > 0);     // aspetto risposta da echo
-            durata_impulso_echo = TA1R;        // assegnazione timer a echo_pulse
-            distance_cm = 0.0171 * durata_impulso_echo;      // conversione in cm
+            while ((P1IN & ECHO_PIN) > 0);     // echo response
+            durata_impulso_echo = TA1R;        
+            distance_cm = 0.0171 * durata_impulso_echo;      // conv cm
         }
         else{
             P1OUT |= BIT0;
-            ADC12CTL0 |= ADC12SC;              // inizio sampling/conversion
+            ADC12CTL0 |= ADC12SC;              // init sampling/conversion
 
-            while (ADC12CTL1 & ADC12BUSY);     // aspetto fine conversione
+            while (ADC12CTL1 & ADC12BUSY);     // wait end conversion
             ADCValue = ADC12MEM0/10;
             distance_cm = ADCValue;
         }
